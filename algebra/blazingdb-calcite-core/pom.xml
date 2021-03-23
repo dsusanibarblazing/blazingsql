@@ -21,7 +21,7 @@
 		<org.slf4j-version>1.5.10</org.slf4j-version>
 		<junit.version>4.12</junit.version>
 		<org.testng.version>6.14.3</org.testng.version>
-		<org.apache.calcite-version>1.23.0</org.apache.calcite-version>
+		<org.apache.calcite-version>1.26.0</org.apache.calcite-version>
 		<org.apache.calcite.avatica-version>1.16.0</org.apache.calcite.avatica-version>
 	</properties>
 
@@ -42,9 +42,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<!-- [Support Guava version 29.0-jre](https://issues.apache.org/jira/browse/CALCITE-4259) -->
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>18.0</version>
+			<version>29.0-jre</version>
 		</dependency>
 
 	</dependencies>

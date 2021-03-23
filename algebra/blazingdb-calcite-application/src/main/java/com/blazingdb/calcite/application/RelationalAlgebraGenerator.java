@@ -4,7 +4,6 @@ import com.blazingdb.calcite.rules.FilterTableScanRule;
 import com.blazingdb.calcite.rules.ProjectFilterTransposeRule;
 import com.blazingdb.calcite.rules.ProjectTableScanRule;
 import com.blazingdb.calcite.schema.BlazingSchema;
-import com.blazingdb.calcite.schema.BlazingTable;
 
 import org.apache.calcite.config.CalciteConnectionConfigImpl;
 import org.apache.calcite.config.Lex;
@@ -18,17 +17,7 @@ import org.apache.calcite.plan.hep.HepProgram;
 import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.rules.FilterJoinRule;
-import org.apache.calcite.rel.rules.AggregateExpandDistinctAggregatesRule;
-import org.apache.calcite.rel.rules.FilterAggregateTransposeRule;
-import org.apache.calcite.rel.rules.FilterRemoveIsNotDistinctFromRule;
-import org.apache.calcite.rel.rules.FilterMergeRule;
-import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
-import org.apache.calcite.rel.rules.ProjectJoinTransposeRule;
-import org.apache.calcite.rel.rules.ProjectMergeRule;
-import org.apache.calcite.rel.rules.AggregateReduceFunctionsRule;
-import org.apache.calcite.rel.rules.ReduceExpressionsRule;
-import org.apache.calcite.rel.rules.ProjectToWindowRule;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rex.RexExecutorImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.SchemaPlus;
@@ -177,6 +166,7 @@ public class RelationalAlgebraGenerator {
 		return planner.rel(validatedSqlNode).project();
 	}
 
+	// Some rules were migrated to CoreRules. More details at: https://github.com/apache/calcite/commit/23b26b6287315cc2cd236e705bb651077488fc5c#diff-82aa2081da5d62c983dd261a73225051916e9845f8cb6933b1d87ce7a4355858
 	public RelNode
 	getOptimizedRelationalAlgebra(RelNode nonOptimizedPlan) throws RelConversionException {
 		if(rules == null) {
@@ -185,44 +175,64 @@ public class RelationalAlgebraGenerator {
 			if (RelOptUtil.toString(nonOptimizedPlan).indexOf("OVER") != -1) {
 				program = new HepProgramBuilder()
 					      //.addRuleInstance(ProjectToWindowRule.PROJECT)
-						  .addRuleInstance(AggregateExpandDistinctAggregatesRule.JOIN)
-						  .addRuleInstance(FilterAggregateTransposeRule.INSTANCE)
-						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.FILTER_ON_JOIN)
-						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.JOIN)
-						  .addRuleInstance(ProjectMergeRule.INSTANCE)
-						  .addRuleInstance(FilterMergeRule.INSTANCE)
+//						  .addRuleInstance(AggregateExpandDistinctAggregatesRule.JOIN)
+						  .addRuleInstance(CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES)
+//						  .addRuleInstance(FilterAggregateTransposeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE)
+//						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.FILTER_ON_JOIN)
+						  .addRuleInstance(CoreRules.FILTER_INTO_JOIN)
+//						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.JOIN)
+						  .addRuleInstance(CoreRules.JOIN_CONDITION_PUSH)
+//						  .addRuleInstance(ProjectMergeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.PROJECT_MERGE)
+//						  .addRuleInstance(FilterMergeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_MERGE)
 						  //.addRuleInstance(ProjectJoinTransposeRule.INSTANCE)
 						  .addRuleInstance(ProjectFilterTransposeRule.INSTANCE)
 
 						  //The following three rules evaluate expressions in Projects and Filters
 						  //.addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
-						  .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+//						  .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS)
 
 						  .addRuleInstance(ProjectTableScanRule.INSTANCE)
 						  .addRuleInstance(FilterTableScanRule.INSTANCE)
-						  .addRuleInstance(FilterRemoveIsNotDistinctFromRule.INSTANCE)
-						  .addRuleInstance(AggregateReduceFunctionsRule.INSTANCE)
+//						  .addRuleInstance(FilterRemoveIsNotDistinctFromRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_EXPAND_IS_NOT_DISTINCT_FROM)
+//						  .addRuleInstance(AggregateReduceFunctionsRule.INSTANCE)
+						  .addRuleInstance(CoreRules.AGGREGATE_REDUCE_FUNCTIONS)
 						  .build();
 			} else {
 				program = new HepProgramBuilder()
 						  //.addRuleInstance(ProjectToWindowRule.PROJECT)
-						  .addRuleInstance(AggregateExpandDistinctAggregatesRule.JOIN)
-						  .addRuleInstance(FilterAggregateTransposeRule.INSTANCE)
-						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.FILTER_ON_JOIN)
-						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.JOIN)
-						  .addRuleInstance(ProjectMergeRule.INSTANCE)
-						  .addRuleInstance(FilterMergeRule.INSTANCE)
-						  .addRuleInstance(ProjectJoinTransposeRule.INSTANCE)
+//						  .addRuleInstance(AggregateExpandDistinctAggregatesRule.JOIN)
+						  .addRuleInstance(CoreRules.AGGREGATE_EXPAND_DISTINCT_AGGREGATES)
+//						  .addRuleInstance(FilterAggregateTransposeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_AGGREGATE_TRANSPOSE)
+//						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.FILTER_ON_JOIN)
+						  .addRuleInstance(CoreRules.FILTER_INTO_JOIN)
+//						  .addRuleInstance(FilterJoinRule.JoinConditionPushRule.JOIN)
+						  .addRuleInstance(CoreRules.JOIN_CONDITION_PUSH)
+//						  .addRuleInstance(ProjectMergeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.PROJECT_MERGE)
+//						  .addRuleInstance(FilterMergeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_MERGE)
+//						  .addRuleInstance(ProjectJoinTransposeRule.INSTANCE)
+						  .addRuleInstance(CoreRules.PROJECT_JOIN_TRANSPOSE)
 						  .addRuleInstance(ProjectFilterTransposeRule.INSTANCE)
 
 						  //The following three rules evaluate expressions in Projects and Filters
-						  .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
-						  .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+//						  .addRuleInstance(ReduceExpressionsRule.PROJECT_INSTANCE)
+						  .addRuleInstance(CoreRules.PROJECT_REDUCE_EXPRESSIONS)
+//						  .addRuleInstance(ReduceExpressionsRule.FILTER_INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_REDUCE_EXPRESSIONS)
 
 						  .addRuleInstance(ProjectTableScanRule.INSTANCE)
 						  .addRuleInstance(FilterTableScanRule.INSTANCE)
-						  .addRuleInstance(FilterRemoveIsNotDistinctFromRule.INSTANCE)
-						  .addRuleInstance(AggregateReduceFunctionsRule.INSTANCE)
+//						  .addRuleInstance(FilterRemoveIsNotDistinctFromRule.INSTANCE)
+						  .addRuleInstance(CoreRules.FILTER_EXPAND_IS_NOT_DISTINCT_FROM)
+//						  .addRuleInstance(AggregateReduceFunctionsRule.INSTANCE)
+						  .addRuleInstance(CoreRules.AGGREGATE_REDUCE_FUNCTIONS)
 						  .build();
 			}
 		} else {

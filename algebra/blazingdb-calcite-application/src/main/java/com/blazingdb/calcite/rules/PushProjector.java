@@ -16,6 +16,7 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.SetOp;
+import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
@@ -481,8 +482,11 @@ public class PushProjector {
 		// creating map of aliases and column refs
 		HashMap<Integer, String> fieldsMap = new HashMap<Integer, String>();
 		for(int i = 0; i < nInputRefs; i++) {
-			if(i < origProj.getChildExps().size()) {
-				fieldsMap.put(origProj.getChildExps().get(i).hashCode(), fieldNames.get(i));
+//			if(i < origProj.getChildExps().size()) {
+//				fieldsMap.put(origProj.getChildExps().get(i).hashCode(), fieldNames.get(i));
+//			getChildExps methods deprecated: https://issues.apache.org/jira/browse/CALCITE-479
+			if(i < ((Project) origProj).getProjects().size()) {
+				fieldsMap.put(((Project) origProj).getProjects().get(i).hashCode(), fieldNames.get(i));
 			}
 		}
 
